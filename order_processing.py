@@ -78,28 +78,35 @@ def calculate_tax(amount):
     return int(amount * TAX_RATE)
 
 
+def generate_order_id(user_id, items_count):
+    """Генерация ID заказа"""
+    return f"{user_id}-{items_count}-X"
+
+
 def process_checkout(request: dict) -> dict:
+    # 1. Парсинг запроса
     user_id, items, coupon, currency = parse_request(request)
     
-    # Валидация запроса
+    # 2. Валидация
     currency = validate_request(user_id, items, currency)
-
-    # Подсчет суммы
+    
+    # 3. Подсчет суммы
     subtotal = calculate_subtotal(items)
-
-    # Расчет скидки
+    
+    # 4. Расчет скидки
     discount = calculate_discount(coupon, subtotal)
-
-    total_after_discount = subtotal - discount
-    if total_after_discount < 0:
-        total_after_discount = 0
-
-    # Расчет налога
+    
+    # 5. Расчет суммы после скидки
+    total_after_discount = max(subtotal - discount, 0)
+    
+    # 6. Расчет налога и итога
     tax = calculate_tax(total_after_discount)
     total = total_after_discount + tax
-
-    order_id = str(user_id) + "-" + str(len(items)) + "-" + "X"
-
+    
+    # 7. Генерация ID заказа
+    order_id = generate_order_id(user_id, len(items))
+    
+    # 8. Формирование результата
     return {
         "order_id": order_id,
         "user_id": user_id,
