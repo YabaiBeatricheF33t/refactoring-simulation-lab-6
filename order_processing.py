@@ -45,15 +45,27 @@ def validate_request(user_id, items, currency):
     return currency
 
 
+def calculate_subtotal(items):
+    """Подсчет общей суммы"""
+    subtotal = 0
+    for it in items:
+        subtotal = subtotal + it["price"] * it["qty"]
+    return subtotal
+
+
+def calculate_tax(amount):
+    """Расчет налога"""
+    return int(amount * TAX_RATE)
+
+
 def process_checkout(request: dict) -> dict:
     user_id, items, coupon, currency = parse_request(request)
     
     # Валидация запроса
     currency = validate_request(user_id, items, currency)
 
-    subtotal = 0
-    for it in items:
-        subtotal = subtotal + it["price"] * it["qty"]
+    # Подсчет суммы
+    subtotal = calculate_subtotal(items)
 
     discount = 0
     if coupon is None or coupon == "":
@@ -76,7 +88,8 @@ def process_checkout(request: dict) -> dict:
     if total_after_discount < 0:
         total_after_discount = 0
 
-    tax = int(total_after_discount * TAX_RATE)
+    # Расчет налога
+    tax = calculate_tax(total_after_discount)
     total = total_after_discount + tax
 
     order_id = str(user_id) + "-" + str(len(items)) + "-" + "X"
