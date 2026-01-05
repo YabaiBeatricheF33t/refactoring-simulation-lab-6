@@ -53,6 +53,26 @@ def calculate_subtotal(items):
     return subtotal
 
 
+def calculate_discount(coupon, subtotal):
+    """Расчет скидки на основе купона"""
+    if coupon is None or coupon == "":
+        return 0
+    elif coupon == "SAVE10":
+        return int(subtotal * SAVE10_DISCOUNT_RATE)
+    elif coupon == "SAVE20":
+        if subtotal >= MIN_AMOUNT_FOR_SAVE20:
+            return int(subtotal * SAVE20_HIGH_DISCOUNT_RATE)
+        else:
+            return int(subtotal * SAVE20_LOW_DISCOUNT_RATE)
+    elif coupon == "VIP":
+        if subtotal >= VIP_THRESHOLD_AMOUNT:
+            return VIP_DISCOUNT_AMOUNT
+        else:
+            return VIP_SMALL_DISCOUNT_AMOUNT
+    else:
+        raise ValueError("unknown coupon")
+
+
 def calculate_tax(amount):
     """Расчет налога"""
     return int(amount * TAX_RATE)
@@ -67,22 +87,8 @@ def process_checkout(request: dict) -> dict:
     # Подсчет суммы
     subtotal = calculate_subtotal(items)
 
-    discount = 0
-    if coupon is None or coupon == "":
-        discount = 0
-    elif coupon == "SAVE10":
-        discount = int(subtotal * SAVE10_DISCOUNT_RATE)
-    elif coupon == "SAVE20":
-        if subtotal >= MIN_AMOUNT_FOR_SAVE20:
-            discount = int(subtotal * SAVE20_HIGH_DISCOUNT_RATE)
-        else:
-            discount = int(subtotal * SAVE20_LOW_DISCOUNT_RATE)
-    elif coupon == "VIP":
-        discount = VIP_DISCOUNT_AMOUNT
-        if subtotal < VIP_THRESHOLD_AMOUNT:
-            discount = VIP_SMALL_DISCOUNT_AMOUNT
-    else:
-        raise ValueError("unknown coupon")
+    # Расчет скидки
+    discount = calculate_discount(coupon, subtotal)
 
     total_after_discount = subtotal - discount
     if total_after_discount < 0:
