@@ -11,6 +11,7 @@ VIP_DISCOUNT_AMOUNT = 50
 VIP_SMALL_DISCOUNT_AMOUNT = 10
 VIP_THRESHOLD_AMOUNT = 100
 
+
 def parse_request(request: dict):
     user_id = request.get("user_id")
     items = request.get("items")
@@ -19,21 +20,20 @@ def parse_request(request: dict):
     return user_id, items, coupon, currency
 
 
-def process_checkout(request: dict) -> dict:
-    user_id, items, coupon, currency = parse_request(request)
-
+def validate_request(user_id, items, currency):
+    """Валидация входных данных"""
     if user_id is None:
         raise ValueError("user_id is required")
     if items is None:
         raise ValueError("items is required")
     if currency is None:
         currency = DEFAULT_CURRENCY
-
+    
     if type(items) is not list:
         raise ValueError("items must be a list")
     if len(items) == 0:
         raise ValueError("items must not be empty")
-
+    
     for it in items:
         if "price" not in it or "qty" not in it:
             raise ValueError("item must have price and qty")
@@ -41,6 +41,15 @@ def process_checkout(request: dict) -> dict:
             raise ValueError("price must be positive")
         if it["qty"] <= 0:
             raise ValueError("qty must be positive")
+    
+    return currency
+
+
+def process_checkout(request: dict) -> dict:
+    user_id, items, coupon, currency = parse_request(request)
+    
+    # Валидация запроса
+    currency = validate_request(user_id, items, currency)
 
     subtotal = 0
     for it in items:
